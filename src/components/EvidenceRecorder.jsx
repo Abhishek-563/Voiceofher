@@ -10,6 +10,8 @@ import {
   Download,
 } from "lucide-react";
 
+import { uploadEvidenceToCloudinary } from "../services/cloudinaryService";
+
 const EvidenceRecorder = () => {
 
   const videoRef = useRef(null);
@@ -23,6 +25,10 @@ const EvidenceRecorder = () => {
   const [videoURL, setVideoURL] = useState("");
 
   const [chunks, setChunks] = useState([]);
+
+  const [videoBlob, setVideoBlob] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [cloudUrl, setCloudUrl] = useState("");
 
   // Start Camera
   const startCamera = async () => {
@@ -75,15 +81,14 @@ const EvidenceRecorder = () => {
     };
 
     mediaRecorder.onstop = () => {
-
       const blob = new Blob(chunks, {
         type: "video/webm",
       });
 
       const url = URL.createObjectURL(blob);
 
+      setVideoBlob(blob);
       setVideoURL(url);
-
       setChunks([]);
     };
   };
@@ -102,6 +107,28 @@ const EvidenceRecorder = () => {
     startCamera();
 
   }, []);
+
+  const uploadEvidence = async () => {
+    if (!videoBlob) {
+      alert("No evidence video found");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const uploadedUrl = await uploadEvidenceToCloudinary(videoBlob);
+
+      setCloudUrl(uploadedUrl);
+
+      alert("Evidence uploaded successfully");
+    } catch (error) {
+      console.log(error);
+      alert("Evidence upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <section className="relative py-28 px-6 overflow-hidden">
@@ -217,6 +244,35 @@ const EvidenceRecorder = () => {
 
               </a>
 
+            </div>
+          )}
+
+          {videoURL && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={uploadEvidence}
+                disabled={uploading}
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 font-bold hover:scale-105 transition disabled:opacity-50"
+              >
+                {uploading ? "Uploading..." : "Upload Evidence to Cloud"}
+              </button>
+            </div>
+          )}
+
+          {cloudUrl && (
+            <div className="mt-6 text-center bg-black/30 border border-white/10 rounded-2xl p-5">
+              <p className="text-green-400 font-bold">
+                Evidence Uploaded Successfully
+              </p>
+
+              <a
+                href={cloudUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-pink-400 break-all mt-3 inline-block"
+              >
+                {cloudUrl}
+              </a>
             </div>
           )}
 

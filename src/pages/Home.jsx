@@ -7,6 +7,7 @@ import EmergencyWidgets from "../components/EmergencyWidgets";
 import VoiceAssistant from "../components/VoiceAssistant";
 import VoiceDetection from "../components/VoiceDetection";
 import LiveTracking from "../components/LiveTracking";
+import NearbyEmergencyServices from "../components/NearbyEmergencyServices";
 import LiveDashboard from "../components/LiveDashboard";
 import EmergencyContacts from "../components/EmergencyContacts";
 import EvidenceRecorder from "../components/EvidenceRecorder";
@@ -33,6 +34,8 @@ const Home = () => {
       <VoiceAssistant />
 
       <LiveTracking />
+
+      <NearbyEmergencyServices />
 
       <VoiceDetection setIsSOSOpen={setIsSOSOpen} />
 

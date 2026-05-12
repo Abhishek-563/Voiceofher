@@ -89,3 +89,13 @@ export const getUserProfile = async (req, res) => {
     res.status(500).json({ message: "Failed to get profile" });
   }
 };
+
+export const getProfile = async (req, res) => {
+  try {
+    res.json(req.user);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch profile",
+    });
+  }
+};
