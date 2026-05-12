@@ -100,11 +100,27 @@ const LiveTracking = () => {
     let watchId = null;
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
-        updatePosition,
-        (err) => {
-          console.error("Watch position error:", err);
+        (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          setLocation(coords);
         },
-        { enableHighAccuracy: true, maximumAge: 8000, timeout: 15000 }
+        (error) => {
+          console.log("Watch position error:", error);
+
+          setLocation({
+            lat: 17.6868,
+            lng: 83.2185,
+          });
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 10000,
+        }
       );
     }
     return () => {

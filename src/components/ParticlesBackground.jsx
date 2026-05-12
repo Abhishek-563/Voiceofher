@@ -1,11 +1,11 @@
-import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
+import Particles from "@tsparticles/react";
+import { loadSlim } from "@tsparticles/slim";
+import { useCallback } from "react";
 
 const ParticlesBackground = () => {
-
-  const particlesInit = async (main) => {
-    await loadFull(main);
-  };
+  const particlesInit = useCallback(async (engine) => {
+    await loadSlim(engine);
+  }, []);
 
   return (
     <Particles
@@ -17,60 +17,39 @@ const ParticlesBackground = () => {
             value: "transparent",
           },
         },
-
-        fpsLimit: 120,
-
+        fpsLimit: 60,
         particles: {
-          color: {
-            value: ["#ec4899", "#8b5cf6", "#ffffff"],
-          },
-
-          links: {
-            color: "#ffffff",
-            distance: 150,
-            enable: true,
-            opacity: 0.1,
-            width: 1,
-          },
-
-          collisions: {
-            enable: false,
-          },
-
-          move: {
-            direction: "none",
-            enable: true,
-            outModes: {
-              default: "bounce",
-            },
-            random: true,
-            speed: 1,
-            straight: false,
-          },
-
           number: {
+            value: 60,
             density: {
               enable: true,
             },
-            value: 70,
           },
-
+          color: {
+            value: "#ec4899",
+          },
+          links: {
+            enable: true,
+            color: "#ec4899",
+            distance: 150,
+            opacity: 0.25,
+          },
+          move: {
+            enable: true,
+            speed: 1,
+          },
           opacity: {
-            value: 0.3,
+            value: 0.4,
           },
-
-          shape: {
-            type: "circle",
-          },
-
           size: {
-            value: { min: 1, max: 5 },
+            value: {
+              min: 1,
+              max: 3,
+            },
           },
         },
-
         detectRetina: true,
       }}
-      className="absolute inset-0 -z-10"
     />
   );
 };

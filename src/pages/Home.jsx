@@ -10,17 +10,17 @@ import LiveTracking from "../components/LiveTracking";
 import LiveDashboard from "../components/LiveDashboard";
 import EmergencyContacts from "../components/EmergencyContacts";
 import EvidenceRecorder from "../components/EvidenceRecorder";
+import FakeCall from "../components/FakeCall";
 import SOSPopup from "../components/SOSPopup";
-import ParticlesBackground from "../components/ParticlesBackground";
+import Footer from "../components/Footer";
+import GlowBackground from "../components/GlowBackground";
 
 const Home = () => {
-
   const [isSOSOpen, setIsSOSOpen] = useState(false);
 
   return (
     <div className="bg-[#050816] text-white overflow-hidden relative">
-
-      <ParticlesBackground />
+      <GlowBackground />
 
       <Navbar />
 
@@ -40,7 +40,11 @@ const Home = () => {
 
       <EvidenceRecorder />
 
+      <FakeCall />
+
       <EmergencyContacts />
+
+      <Footer />
 
       <SOSPopup
         isOpen={isSOSOpen}
