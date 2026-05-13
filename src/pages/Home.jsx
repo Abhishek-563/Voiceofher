@@ -17,7 +17,15 @@ import Footer from "../components/Footer";
 import GlowBackground from "../components/GlowBackground";
 
 const Home = () => {
-  const [isSOSOpen, setIsSOSOpen] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
+
+  const openSOS = () => {
+    setShowSOS(true);
+  };
+
+  const closeSOS = () => {
+    setShowSOS(false);
+  };
 
   return (
     <div className="bg-[#050816] text-white overflow-hidden relative">
@@ -25,11 +33,19 @@ const Home = () => {
 
       <Navbar />
 
-      <Hero setIsSOSOpen={setIsSOSOpen} />
+      <button
+        type="button"
+        onClick={() => setShowSOS(true)}
+        className="fixed bottom-6 right-6 z-[9999] px-6 py-4 rounded-full bg-red-600 text-white font-bold"
+      >
+        Test SOS
+      </button>
+
+      <Hero setShowSOS={setShowSOS} onSOSClick={() => setShowSOS(true)} />
 
       <Stats />
 
-      <EmergencyWidgets />
+      <EmergencyWidgets setShowSOS={setShowSOS} onSOSClick={() => setShowSOS(true)} />
 
       <VoiceAssistant />
 
@@ -37,7 +53,7 @@ const Home = () => {
 
       <NearbyEmergencyServices />
 
-      <VoiceDetection setIsSOSOpen={setIsSOSOpen} />
+      <VoiceDetection setShowSOS={setShowSOS} onSOSDetected={() => setShowSOS(true)} />
 
       <LiveDashboard />
 
@@ -49,11 +65,7 @@ const Home = () => {
 
       <Footer />
 
-      <SOSPopup
-        isOpen={isSOSOpen}
-        setIsOpen={setIsSOSOpen}
-      />
-
+      <SOSPopup isOpen={showSOS} onClose={closeSOS} />
     </div>
   );
 };

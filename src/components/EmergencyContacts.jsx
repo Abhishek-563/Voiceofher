@@ -12,33 +12,70 @@ const EmergencyContacts = () => {
   const [adding, setAdding] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [form, setForm] = useState({ name: "", phone: "", relationship: "Family" });
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    relation: "Family",
+  });
   const [error, setError] = useState("");
 
+  const fetchContacts = async () => {
+    try {
+      const res = await contactsAPI.getAll();
+      setContacts(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
-    contactsAPI.getAll()
-      .then(r => { setContacts(r.data); setLoading(false); })
-      .catch(() => setLoading(false));
+    fetchContacts().finally(() => setLoading(false));
   }, []);
 
-  const handleAdd = async () => {
-    if (!form.name.trim() || !form.phone.trim()) { setError("Name and phone are required."); return; }
-    setError(""); setAdding(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     try {
-      const r = await contactsAPI.add(form);
-      setContacts(r.data);
-      setForm({ name: "", phone: "", relationship: "Family" });
+      setError("");
+      setAdding(true);
+
+      await contactsAPI.create(formData);
+
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        relation: "Family",
+      });
+
       setShowForm(false);
-    } catch { setError("Failed to add contact. Please try again."); }
-    finally { setAdding(false); }
+      fetchContacts();
+    } catch (error) {
+      console.log(error);
+      setError(
+        error.response?.data?.message ||
+          "Failed to add contact. Please try again."
+      );
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDelete = async (id) => {
     try {
-      const r = await contactsAPI.remove(id);
-      setContacts(r.data);
-    } catch { console.error("Delete failed"); }
-    finally { setDeleteConfirm(null); }
+      await contactsAPI.remove(id);
+      fetchContacts();
+    } catch (error) {
+      console.error("Delete failed", error);
+    } finally {
+      setDeleteConfirm(null);
+    }
   };
 
   const getInitials = (name) => name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
@@ -88,21 +125,46 @@ const EmergencyContacts = () => {
                     <X size={18} />
                   </button>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}
                   className="form-grid">
                   <input className="input-field" placeholder="Full Name"
-                    value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                    value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   <input className="input-field" placeholder="Phone Number"
-                    value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                  <select className="input-field"
-                    value={form.relationship} onChange={e => setForm({ ...form, relationship: e.target.value })}
-                    style={{ cursor: "pointer" }}>
-                    {relationships.map(r => <option key={r} value={r}>{r}</option>)}
+                    value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email Address"
+                    className="w-full bg-[#151827] text-white border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-pink-500"
+                  />
+                  <select
+                    name="relation"
+                    value={formData.relation}
+                    onChange={handleChange}
+                    className="w-full bg-[#151827] text-white border border-pink-500/50 rounded-xl px-5 py-4 outline-none"
+                  >
+                    <option className="bg-[#151827] text-white" value="Family">
+                      Family
+                    </option>
+                    <option className="bg-[#151827] text-white" value="Friend">
+                      Friend
+                    </option>
+                    <option className="bg-[#151827] text-white" value="Neighbor">
+                      Neighbor
+                    </option>
+                    <option className="bg-[#151827] text-white" value="Police">
+                      Police
+                    </option>
+                    <option className="bg-[#151827] text-white" value="Doctor">
+                      Doctor
+                    </option>
                   </select>
                 </div>
                 {error && <p style={{ color: "#fca5a5", fontSize: "0.85rem", marginTop: "0.75rem" }}>{error}</p>}
                 <div style={{ display: "flex", gap: 10, marginTop: "1.25rem" }}>
-                  <button onClick={handleAdd} disabled={adding}
+                  <button onClick={handleSubmit} disabled={adding}
                     className="btn-primary"
                     style={{ padding: "11px 28px", display: "flex", alignItems: "center", gap: 8,
                       opacity: adding ? 0.7 : 1, fontSize: "0.9rem" }}>
@@ -159,10 +221,10 @@ const EmergencyContacts = () => {
                   {/* Avatar */}
                   <div style={{
                     width: 52, height: 52, borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${relationshipColors[c.relationship] || "#ec4899"}, var(--purple))`,
+                    background: `linear-gradient(135deg, ${relationshipColors[c.relation] || "#ec4899"}, var(--purple))`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontWeight: 800, fontSize: "1.1rem", flexShrink: 0,
-                    boxShadow: `0 0 16px ${(relationshipColors[c.relationship] || "#ec4899")}40`,
+                    boxShadow: `0 0 16px ${(relationshipColors[c.relation] || "#ec4899")}40`,
                   }}>
                     {getInitials(c.name)}
                   </div>
@@ -173,11 +235,11 @@ const EmergencyContacts = () => {
                         className="truncate">{c.name}</h4>
                       <span style={{
                         fontSize: "0.68rem", padding: "2px 8px", borderRadius: 100, fontWeight: 600,
-                        background: (relationshipColors[c.relationship] || "#ec4899") + "18",
-                        color: relationshipColors[c.relationship] || "#ec4899",
-                        border: `1px solid ${(relationshipColors[c.relationship] || "#ec4899")}30`,
+                        background: (relationshipColors[c.relation] || "#ec4899") + "18",
+                        color: relationshipColors[c.relation] || "#ec4899",
+                        border: `1px solid ${(relationshipColors[c.relation] || "#ec4899")}30`,
                         whiteSpace: "nowrap",
-                      }}>{c.relationship}</span>
+                      }}>{c.relation}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: "0.85rem" }}>
                       <Phone size={13} /> {c.phone}

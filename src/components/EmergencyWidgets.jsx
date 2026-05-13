@@ -52,7 +52,7 @@ const widgets = [
   },
 ];
 
-const EmergencyWidgets = () => (
+const EmergencyWidgets = ({ setShowSOS, onSOSClick }) => (
   <section id="features" style={{ padding: "6rem 2rem", position: "relative", zIndex: 1 }}>
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
       <motion.div
@@ -87,9 +87,13 @@ const EmergencyWidgets = () => (
               borderRadius: "var(--radius-lg)",
               padding: "1.75rem",
               overflow: "hidden",
-              cursor: "default",
+              cursor: w.title === "Instant SOS Trigger" ? "pointer" : "default",
               transition: "all 0.3s ease",
             }}
+            onClick={w.title === "Instant SOS Trigger" ? () => {
+              if (setShowSOS) setShowSOS(true);
+              if (onSOSClick) onSOSClick();
+            } : undefined}
             onMouseEnter={e => {
               e.currentTarget.style.borderColor = w.color + "44";
               e.currentTarget.style.background = "rgba(255,255,255,0.06)";

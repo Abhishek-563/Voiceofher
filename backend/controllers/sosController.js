@@ -1,132 +1,199 @@
-import axios from "axios";
 import SOSAlert from "../models/SOSAlert.js";
-import User from "../models/User.js";
+import Contact from "../models/Contact.js";
+import {
+  sendEmergencyEmail,
+  sendEvidenceFollowUpEmail,
+} from "../services/emailService.js";
 
 export const sendSOS = async (req, res) => {
   try {
-    const { location, triggeredBy } = req.body;
+    const { latitude, longitude, address, evidenceUrl, name, email } = req.body;
 
-    const user = await User.findById(req.user._id);
-    const contacts = user.emergencyContacts;
-
-    // Save SOS alert to database
-    const alert = await SOSAlert.create({
-      user: req.user._id,
-      location,
-      status: "ACTIVE",
-      contactsNotified: contacts.map((c) => ({
-        name: c.name,
-        phone: c.phone,
-      })),
-      triggeredBy: triggeredBy || "BUTTON",
-    });
-
-    const message = `
-🚨 EMERGENCY ALERT 🚨
-
-Voice of Her SOS Activated by ${user.name}.
-
-Live Location:
-https://maps.google.com/?q=${location.lat},${location.lng}
-
-Please respond immediately.
-`;
-
-    // Send SMS to each contact (if API key configured)
-    if (
-      process.env.FAST2SMS_API_KEY &&
-      process.env.FAST2SMS_API_KEY !== "YOUR_API_KEY"
-    ) {
-      for (const contact of contacts) {
-        try {
-          await axios.post(
-            "https://www.fast2sms.com/dev/bulkV2",
-            {
-              route: "v3",
-              sender_id: "TXTIND",
-              message,
-              language: "english",
-              numbers: [contact.phone],
-            },
-            {
-              headers: {
-                authorization: process.env.FAST2SMS_API_KEY,
-              },
-            }
-          );
-        } catch (smsError) {
-          console.error(
-            `Failed to send SMS to ${contact.phone}:`,
-            smsError.message
-          );
-        }
-      }
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        message: "Latitude and longitude are required",
+      });
     }
 
-    // Emit real-time socket event
-    const io = req.app.get("io");
-    io.emit("newSOS", {
-      _id: alert._id,
-      user: {
-        _id: user._id,
-        name: user.name,
-      },
-      location: alert.location,
-      status: alert.status,
-      triggeredBy: alert.triggeredBy,
-      contactsNotified: alert.contactsNotified,
-      createdAt: alert.createdAt,
+    const alert = await SOSAlert.create({
+      user: req.user?._id,
+      name: req.user?.name || name || "Unknown User",
+      email: req.user?.email || email || "",
+      latitude,
+      longitude,
+      address: address || "Location address not available",
+      evidenceUrl: evidenceUrl || "",
     });
 
-    res.status(200).json({
-      success: true,
-      message: "SOS sent successfully",
+    const io = req.app.get("io");
+
+    if (io) {
+      io.emit("newSOSAlert", alert);
+    }
+
+    const contacts = await Contact.find({ user: req.user._id });
+
+    res.status(201).json({
+      message: "SOS alert created. Emails are being sent.",
       alert,
+      contactsNotified: contacts.length,
+    });
+
+    setImmediate(async () => {
+      for (const contact of contacts) {
+        if (contact.email) {
+          try {
+            await sendEmergencyEmail({
+              to: contact.email,
+              contactName: contact.name,
+              userName: alert.name,
+              userEmail: alert.email,
+              latitude,
+              longitude,
+              address: address || "Live GPS location",
+              evidenceUrl: evidenceUrl || "",
+              alertTime: new Date().toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+              }),
+            });
+          } catch (emailError) {
+            console.log(
+              `Failed to send SOS email to ${contact.email}:`,
+              emailError.message
+            );
+          }
+        }
+      }
     });
   } catch (error) {
-    console.error("SOS error:", error);
     res.status(500).json({
-      success: false,
-      message: "Failed to send SOS",
+      message: "Failed to send SOS alert",
+      error: error.message,
     });
   }
 };
 
 export const getSOSHistory = async (req, res) => {
   try {
-    const alerts = await SOSAlert.find({ user: req.user._id })
+    const alerts = await SOSAlert.find()
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(50);
 
-    res.json(alerts);
+    res.status(200).json(alerts);
   } catch (error) {
-    console.error("Get SOS history error:", error);
-    res.status(500).json({ message: "Failed to fetch SOS history" });
+    res.status(500).json({
+      message: "Failed to fetch SOS history",
+      error: error.message,
+    });
   }
 };
 
-export const resolveAlert = async (req, res) => {
+export const updateSOSStatus = async (req, res) => {
   try {
+    const { status } = req.body;
+
+    const allowedStatuses = ["Active", "Resolved"];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status value",
+      });
+    }
+
     const alert = await SOSAlert.findById(req.params.id);
 
     if (!alert) {
-      return res.status(404).json({ message: "Alert not found" });
+      return res.status(404).json({
+        message: "SOS alert not found",
+      });
     }
 
-    if (alert.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    alert.status = "RESOLVED";
-    alert.resolvedAt = new Date();
+    alert.status = status;
     await alert.save();
 
     const io = req.app.get("io");
-    io.emit("sosResolved", { _id: alert._id });
 
-    res.json(alert);
+    if (io) {
+      io.emit("sosStatusUpdated", alert);
+    }
+
+    res.json({
+      message: "SOS status updated",
+      alert,
+    });
   } catch (error) {
-    console.error("Resolve alert error:", error);
-    res.status(500).json({ message: "Failed to resolve alert" });
+    res.status(500).json({
+      message: "Failed to update SOS status",
+      error: error.message,
+    });
+  }
+};
+
+export const updateSOSEvidence = async (req, res) => {
+  try {
+    const { evidenceUrl } = req.body;
+
+    if (!evidenceUrl) {
+      return res.status(400).json({
+        message: "Evidence URL is required",
+      });
+    }
+
+    const alert = await SOSAlert.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!alert) {
+      return res.status(404).json({
+        message: "SOS alert not found",
+      });
+    }
+
+    alert.evidenceUrl = evidenceUrl;
+
+    const updatedAlert = await alert.save();
+
+    const io = req.app.get("io");
+
+    if (io) {
+      io.emit("sosEvidenceUpdated", updatedAlert);
+    }
+
+    const contacts = await Contact.find({
+      user: req.user._id,
+    });
+
+    for (const contact of contacts) {
+      if (contact.email) {
+        try {
+          await sendEvidenceFollowUpEmail({
+            to: contact.email,
+            contactName: contact.name,
+            userName: alert.name,
+            evidenceUrl,
+            alertTime: new Date().toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+            }),
+          });
+        } catch (emailError) {
+          console.log(
+            `Failed to send evidence email to ${contact.email}:`,
+            emailError.message
+          );
+        }
+      }
+    }
+
+    res.status(200).json({
+      message: "Evidence attached and follow-up emails sent successfully",
+      alert: updatedAlert,
+      contactsNotified: contacts.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to attach evidence",
+      error: error.message,
+    });
   }
 };

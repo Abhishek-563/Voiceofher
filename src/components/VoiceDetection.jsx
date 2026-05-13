@@ -6,7 +6,7 @@ import "../App.css";
 
 const DANGER_WORDS = ["help", "save me", "emergency", "danger", "please help", "bachao"];
 
-const VoiceDetection = ({ setIsSOSOpen }) => {
+const VoiceDetection = ({ setShowSOS, onSOSDetected }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [dangerDetected, setDangerDetected] = useState(false);
@@ -29,7 +29,8 @@ const VoiceDetection = ({ setIsSOSOpen }) => {
       if (detected && !dangerDetected) {
         setDangerDetected(true);
         setStatus("danger");
-        setIsSOSOpen(true);
+        if (setShowSOS) setShowSOS(true);
+        if (onSOSDetected) onSOSDetected();
         triggerSOS("VOICE");
         setTimeout(() => { setDangerDetected(false); setStatus("listening"); }, 6000);
       }
@@ -37,7 +38,7 @@ const VoiceDetection = ({ setIsSOSOpen }) => {
 
     rec.onerror = () => setIsListening(false);
     recognitionRef.current = rec;
-  }, [setIsSOSOpen, dangerDetected]);
+  }, [setShowSOS, onSOSDetected, dangerDetected]);
 
   const triggerSOS = async (by) => {
     try {

@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ShieldAlert, MapPinned, Siren, Wifi } from "lucide-react";
 import "../App.css";
 
-const Hero = ({ setIsSOSOpen }) => {
+const Hero = ({ setShowSOS, onSOSClick }) => {
   const features = [
     { icon: <ShieldAlert size={16} />, label: "24/7 SOS", color: "var(--pink)" },
     { icon: <MapPinned size={16} />, label: "Live GPS", color: "var(--purple)" },
@@ -92,7 +92,10 @@ const Hero = ({ setIsSOSOpen }) => {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: "3rem" }}>
             <motion.button
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => setIsSOSOpen(true)}
+              onClick={() => {
+                if (setShowSOS) setShowSOS(true);
+                if (onSOSClick) onSOSClick();
+              }}
               className="btn-primary"
               style={{ padding: "14px 32px", fontSize: "1rem", boxShadow: "var(--shadow-pink)" }}>
               🚨 Activate SOS
@@ -159,7 +162,10 @@ const Hero = ({ setIsSOSOpen }) => {
 
             {/* SOS Button */}
             <motion.button
-              onClick={() => setIsSOSOpen(true)}
+              onClick={() => {
+                if (setShowSOS) setShowSOS(true);
+                if (onSOSClick) onSOSClick();
+              }}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.93 }}
               style={{

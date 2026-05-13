@@ -5,30 +5,42 @@ const sosAlertSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+
+    name: {
+      type: String,
+      default: "Unknown User",
+    },
+
+    email: {
+      type: String,
+      default: "",
+    },
+
+    latitude: {
+      type: Number,
       required: true,
     },
-    location: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+
+    longitude: {
+      type: Number,
+      required: true,
     },
+
+    address: {
+      type: String,
+      default: "Location address not available",
+    },
+
+    evidenceUrl: {
+      type: String,
+      default: "",
+    },
+
     status: {
       type: String,
-      enum: ["ACTIVE", "RESOLVED", "CANCELLED"],
-      default: "ACTIVE",
-    },
-    contactsNotified: [
-      {
-        name: String,
-        phone: String,
-      },
-    ],
-    triggeredBy: {
-      type: String,
-      enum: ["BUTTON", "VOICE", "AUTO"],
-      default: "BUTTON",
-    },
-    resolvedAt: {
-      type: Date,
+      enum: ["Active", "Resolved"],
+      default: "Active",
     },
   },
   {

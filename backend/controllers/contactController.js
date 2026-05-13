@@ -1,55 +1,69 @@
-import User from "../models/User.js";
+import Contact from "../models/Contact.js";
 
 export const getContacts = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    res.json(user.emergencyContacts);
+    const contacts = await Contact.find({
+      user: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(contacts);
   } catch (error) {
-    console.error("Get contacts error:", error);
-    res.status(500).json({ message: "Failed to fetch contacts" });
+    res.status(500).json({
+      message: "Failed to fetch contacts",
+      error: error.message,
+    });
   }
 };
 
 export const addContact = async (req, res) => {
   try {
-    const { name, phone, relationship } = req.body;
+    const { name, phone, email, relation } = req.body;
 
-    if (!name || !phone) {
-      return res
-        .status(400)
-        .json({ message: "Name and phone are required" });
+    if (!name || !phone || !email || !relation) {
+      return res.status(400).json({
+        message: "Name, phone, email and relation are required",
+      });
     }
 
-    const user = await User.findById(req.user._id);
-
-    user.emergencyContacts.push({
+    const contact = await Contact.create({
+      user: req.user._id,
       name,
       phone,
-      relationship: relationship || "Other",
+      email,
+      relation,
     });
 
-    await user.save();
-
-    res.status(201).json(user.emergencyContacts);
+    res.status(201).json(contact);
   } catch (error) {
-    console.error("Add contact error:", error);
-    res.status(500).json({ message: "Failed to add contact" });
+    res.status(500).json({
+      message: "Failed to add contact",
+      error: error.message,
+    });
   }
 };
 
 export const deleteContact = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
 
-    user.emergencyContacts = user.emergencyContacts.filter(
-      (c) => c._id.toString() !== req.params.id
-    );
+    if (!contact) {
+      return res.status(404).json({
+        message: "Contact not found",
+      });
+    }
 
-    await user.save();
+    await contact.deleteOne();
 
-    res.json(user.emergencyContacts);
+    res.status(200).json({
+      message: "Contact deleted successfully",
+    });
   } catch (error) {
-    console.error("Delete contact error:", error);
-    res.status(500).json({ message: "Failed to delete contact" });
+    res.status(500).json({
+      message: "Failed to delete contact",
+      error: error.message,
+    });
   }
 };

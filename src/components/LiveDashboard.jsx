@@ -12,8 +12,24 @@ const LiveDashboard = () => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // Load history from DB
-    sosAPI.getHistory().then(r => { setAlerts(r.data); setLoading(false); }).catch(() => setLoading(false));
+    const fetchSOSHistory = async () => {
+      try {
+        const userInfo = localStorage.getItem("userInfo");
+
+        if (!userInfo) {
+          return;
+        }
+
+        const res = await sosAPI.getHistory();
+        setAlerts(res.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSOSHistory();
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));

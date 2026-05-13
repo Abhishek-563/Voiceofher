@@ -118,7 +118,7 @@ const NearbyEmergencyServices = () => {
       setServices(places);
     } catch (error) {
       console.log("Overpass error:", error);
-      alert("Failed to load nearby emergency services");
+      setServices([]);
     } finally {
       setLoading(false);
     }

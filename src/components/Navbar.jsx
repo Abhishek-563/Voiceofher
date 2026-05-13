@@ -8,7 +8,7 @@ import "../App.css";
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const Navbar = () => {
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {isAuthenticated && (
+          {user && (
             <>
               <Link to="/admin" style={{
                 background: "var(--bg-card)",

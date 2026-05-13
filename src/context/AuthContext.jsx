@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import API from "../services/api";
 
 const AuthContext = createContext();
 
@@ -7,9 +8,34 @@ export const AuthProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("userInfo")) || null
   );
 
-  const login = (userData) => {
-    localStorage.setItem("userInfo", JSON.stringify(userData));
-    setUser(userData);
+  const login = async (emailOrUserData, password) => {
+    if (typeof emailOrUserData === "object") {
+      const userData = emailOrUserData;
+      localStorage.setItem("userInfo", JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    }
+
+    const res = await API.post("/auth/login", {
+      email: emailOrUserData,
+      password,
+    });
+
+    localStorage.setItem("userInfo", JSON.stringify(res.data));
+    setUser(res.data);
+    return res.data;
+  };
+
+  const register = async (name, email, password) => {
+    const res = await API.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
+
+    localStorage.setItem("userInfo", JSON.stringify(res.data));
+    setUser(res.data);
+    return res.data;
   };
 
   const logout = () => {
@@ -22,6 +48,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         login,
+        register,
         logout,
       }}
     >
