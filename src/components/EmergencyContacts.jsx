@@ -40,7 +40,7 @@ const EmergencyContacts = () => {
       setError("");
       setAdding(true);
 
-      await contactsAPI.create(formData);
+      await contactsAPI.add(formData);
 
       setFormData({
         name: "",
@@ -69,7 +69,7 @@ const EmergencyContacts = () => {
 
   const handleDelete = async (id) => {
     try {
-      await contactsAPI.remove(id);
+      await contactsAPI.delete(id);
       fetchContacts();
     } catch (error) {
       console.error("Delete failed", error);

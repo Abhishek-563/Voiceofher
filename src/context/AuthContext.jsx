@@ -5,13 +5,14 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("userInfo")) || null
+    JSON.parse(localStorage.getItem("voh_user")) || null
   );
 
   const login = async (emailOrUserData, password) => {
     if (typeof emailOrUserData === "object") {
       const userData = emailOrUserData;
-      localStorage.setItem("userInfo", JSON.stringify(userData));
+      localStorage.setItem("voh_user", JSON.stringify(userData));
+      localStorage.setItem("token", userData.token);
       setUser(userData);
       return userData;
     }
@@ -21,7 +22,8 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    localStorage.setItem("userInfo", JSON.stringify(res.data));
+    localStorage.setItem("voh_user", JSON.stringify(res.data));
+    localStorage.setItem("token", res.data.token);
     setUser(res.data);
     return res.data;
   };
@@ -33,13 +35,16 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    localStorage.setItem("userInfo", JSON.stringify(res.data));
+    localStorage.setItem("voh_user", JSON.stringify(res.data));
+    localStorage.setItem("token", res.data.token);
     setUser(res.data);
     return res.data;
   };
 
   const logout = () => {
+    localStorage.removeItem("voh_user");
     localStorage.removeItem("userInfo");
+    localStorage.removeItem("token");
     setUser(null);
   };
 

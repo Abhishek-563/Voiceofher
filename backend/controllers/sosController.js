@@ -197,3 +197,78 @@ export const updateSOSEvidence = async (req, res) => {
     });
   }
 };
+
+export const deleteSOSAlert = async (req, res) => {
+  try {
+    const alert = await SOSAlert.findById(req.params.id);
+
+    if (!alert) {
+      return res.status(404).json({
+        message: "SOS alert not found",
+      });
+    }
+
+    await SOSAlert.findByIdAndDelete(req.params.id);
+
+    const io = req.app.get("io");
+
+    if (io) {
+      io.emit("sosAlertDeleted", req.params.id);
+    }
+
+    res.status(200).json({
+      message: "SOS alert deleted successfully",
+      deletedId: req.params.id,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete SOS alert",
+      error: error.message,
+    });
+  }
+};
+
+export const clearAllSOSAlerts = async (req, res) => {
+  try {
+    await SOSAlert.deleteMany({});
+
+    const io = req.app.get("io");
+
+    if (io) {
+      io.emit("sosAlertsCleared");
+    }
+
+    res.status(200).json({
+      message: "All SOS alerts cleared successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to clear SOS alerts",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteResolvedSOSAlerts = async (req, res) => {
+  try {
+    const result = await SOSAlert.deleteMany({
+      status: "Resolved",
+    });
+
+    const io = req.app.get("io");
+
+    if (io) {
+      io.emit("resolvedSOSAlertsDeleted");
+    }
+
+    res.status(200).json({
+      message: "Resolved SOS alerts deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete resolved SOS alerts",
+      error: error.message,
+    });
+  }
+};

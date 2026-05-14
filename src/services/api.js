@@ -1,38 +1,13 @@
 import axios from "axios";
 
-const API = axios.create({
+const api = axios.create({
   baseURL: "http://localhost:5000/api",
 });
 
-API.interceptors.request.use(
+api.interceptors.request.use(
   (config) => {
-    let token = localStorage.getItem("token");
-
-    if (!token) {
-      const vohUser = localStorage.getItem("voh_user");
-
-      if (vohUser) {
-        try {
-          const parsedUser = JSON.parse(vohUser);
-          token = parsedUser?.token || parsedUser?.accessToken;
-        } catch (error) {
-          console.log("Invalid voh_user in localStorage");
-        }
-      }
-    }
-
-    if (!token) {
-      const userInfo = localStorage.getItem("userInfo");
-
-      if (userInfo) {
-        try {
-          const parsedUserInfo = JSON.parse(userInfo);
-          token = parsedUserInfo?.token || parsedUserInfo?.accessToken;
-        } catch (error) {
-          console.log("Invalid userInfo in localStorage");
-        }
-      }
-    }
+    const vohUser = JSON.parse(localStorage.getItem("voh_user") || "{}");
+    const token = localStorage.getItem("token") || vohUser.token;
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -44,30 +19,25 @@ API.interceptors.request.use(
 );
 
 export const authAPI = {
-  register: (data) => API.post("/auth/register", data),
-  login: (data) => API.post("/auth/login", data),
-  profile: () => API.get("/auth/profile"),
+  login: (data) => api.post("/auth/login", data),
+  register: (data) => api.post("/auth/register", data),
+};
+
+export const contactsAPI = {
+  getAll: () => api.get("/contacts"),
+  add: (data) => api.post("/contacts", data),
+  delete: (id) => api.delete(`/contacts/${id}`),
 };
 
 export const sosAPI = {
-  sendSOS: (data) => API.post("/sos/send", data),
-  getHistory: () => API.get("/sos/history"),
-  updateStatus: (id, status) =>
-    API.patch(`/sos/${id}/status`, { status }),
+  send: (data) => api.post("/sos/send", data),
+  getHistory: () => api.get("/sos/history"),
+  updateStatus: (id, status) => api.patch(`/sos/${id}/status`, { status }),
   updateEvidence: (id, evidenceUrl) =>
-    API.patch(`/sos/${id}/evidence`, { evidenceUrl }),
+    api.patch(`/sos/${id}/evidence`, { evidenceUrl }),
+  deleteAlert: (id) => api.delete(`/sos/${id}`),
+  clearAll: () => api.delete("/sos/clear-all"),
+  deleteResolved: () => api.delete("/sos/resolved"),
 };
 
-export const contactAPI = {
-  getContacts: () => API.get("/contacts"),
-  addContact: (data) => API.post("/contacts", data),
-  deleteContact: (id) => API.delete(`/contacts/${id}`),
-
-  getAll: () => API.get("/contacts"),
-  create: (data) => API.post("/contacts", data),
-  remove: (id) => API.delete(`/contacts/${id}`),
-};
-
-export const contactsAPI = contactAPI;
-
-export default API;
+export default api;
